@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">My Application</string>
+    <string name="launch_kotlin_activity">Launch Kotlin Activity</string>
+</resources>

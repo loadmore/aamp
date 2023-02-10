@@ -1,0 +1,104 @@
+apply plugin: 'com.android.library'
+import com.android.build.gradle.LibraryPlugin
+import org.aspectj.bridge.IMessage
+import org.aspectj.bridge.MessageHandler
+import org.aspectj.tools.ajc.Main
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.aspectj:aspectjtools:1.9.5'
+    }
+}
+
+android {
+    compileSdkVersion 29
+
+
+    defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion 29
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        setProperty("archivesBaseName", "aamp-v-$versionName")
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'org.aspectj:aspectjrt:1.9.5'
+}
+
+android.libraryVariants.all { variant ->
+    LibraryPlugin plugin = project.plugins.getPlugin(LibraryPlugin)
+
+
+    TaskProvider<JavaCompile> taskProvider = variant.getJavaCompileProvider()
+    taskProvider.configure {
+
+
+        String path = javaCompile.options.bootstrapClasspath.join(File.pathSeparator)
+        String cp = javaCompile.classpath.asFileTree.filter {
+            !it.canonicalPath.contains("transforms")
+        }.asPath
+
+//        String path2 = javaCompiler.classpath.asFileTree.filter {
+//            !it.canonicalPath.contains("transforms")
+//        }.asPath
+//        println(path2)
+        println('---------------------------'+path)
+        println('---------------------------'+cp)
+        javaCompile.doLast {
+
+            String[] args = ["-showWeaveInfo",
+                             "-1.9",
+                             "-inpath", javaCompile.destinationDir.toString(),
+                             "-aspectpath", cp,
+                             "-d", javaCompile.destinationDir.toString(),
+                             "-classpath", javaCompile.classpath.asPath,
+                             "-bootclasspath", path]
+
+            String[] kotlinArgs = ["-showWeaveInfo",
+                                   "-1.9",
+                                   "-inpath", project.buildDir.path + "/tmp/kotlin-classes/debug",
+                                   "-aspectpath", cp,
+                                   "-d", project.buildDir.path + "/tmp/kotlin-classes/debug",
+                                   "-classpath", javaCompile.classpath.asPath,
+                                   "-bootclasspath", path]
+
+            MessageHandler handler = new MessageHandler(true);
+            new Main().run(args, handler)
+            new Main().run(kotlinArgs, handler)
+
+            def log = project.logger
+            for (IMessage message : handler.getMessages(null, true)) {
+                println("MethodTracing library log "+message.getKind().toString() + " "+message.message)
+                switch (message.getKind()) {
+                    case IMessage.ABORT:
+                    case IMessage.ERROR:
+                    case IMessage.FAIL:
+                        log.error message.message, message.thrown
+                        break;
+                    case IMessage.WARNING:
+                    case IMessage.INFO:
+                        log.info message.message, message.thrown
+                        break;
+                    case IMessage.DEBUG:
+                        log.debug message.message, message.thrown
+                        break;
+                }
+            }
+        }
+    }
+}
