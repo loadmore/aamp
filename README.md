@@ -1,6 +1,13 @@
 # aamp
-android aop  grade 配置文件
+android aop 
 
+更新为最新grade版本配置文件
+
+ classpath 'com.android.tools.build:gradle:7.4.1'
+
+ distributionUrl=https\://services.gradle.org/distributions/gradle-7.5-all.zip
+
+```
 apply plugin: 'kotlin-kapt'
 
 buildscript {
@@ -88,3 +95,5 @@ variants.all { variant ->
 
 
 }
+
+```
