@@ -1,6 +1,8 @@
 # aamp
 android aop 
 
+[来源]<https://dashitesh.medium.com/android-method-profiler-tool-amp-using-aspectj-5c85af8ed599>
+
 更新为最新grade版本配置文件
 
  classpath 'com.android.tools.build:gradle:7.4.1'
